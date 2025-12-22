@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cluster Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #274c99; color: #e5e7eb; }
+        h1 { color: #f9fafb; }
+        .node-card {
+            padding: 8px 12px;
+            margin: 6px 0;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .status-badge {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .alive { background-color: #16a34a; color: #f9fafb; }   /* зелено */
+        .suspect { background-color: #facc15; color: #111827; } /* жолто */
+        .dead { background-color: #dc2626; color: #f9fafb; }    /* црвено */
+        .keys-box {
+            margin-top: 16px;
+            padding: 10px;
+            border-radius: 6px;
+            background: #1f2937;
+        }
+        .key-line { margin: 3px 0; }
+        button {
+            margin-top: 8px;
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: none;
+            background: #3b82f6;
+            color: #f9fafb;
+            cursor: pointer;
+        }
+        button:hover { background: #2563eb; }
+    </style>
+</head>
+<body>
+<h1>Cluster Dashboard</h1>
+
+<div>
+    <button onclick="refreshStatus()">Refresh status</button>
+    <button onclick="rebalanceRing()">Rebalance hash ring</button>
+</div>
+
+<h2>Nodes</h2>
+<div id="nodes"></div>
+
+<div class="keys-box">
+    <h3>Key assignments (Hash Ring)</h3>
+    <button onclick="refreshKeys()">Refresh keys</button>
+    <div id="keys"></div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

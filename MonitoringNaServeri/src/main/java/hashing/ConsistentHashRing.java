@@ -3,74 +3,82 @@ package hashing;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
-import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+// klasa za consistent hash ring so virtualni jazli (replici)
 public class ConsistentHashRing<T> {
 
+    // podreden map: hash pozicija na prstenot -> node
     private final SortedMap<Long, T> ring = new TreeMap<>();
+    // kolku virtualni jazli (replici) kreirame za sekoj node
     private final int numberOfReplicas;
 
+    // konstruktor: postavuva broj na replici i gi dodava pocetnite jazli, ako gi ima
     public ConsistentHashRing(int numberOfReplicas, Collection<T> nodes) {
         this.numberOfReplicas = numberOfReplicas;
-        nodes.forEach(this::add);
+        if (nodes != null) {
+            nodes.forEach(this::add);
+        }
     }
 
-    /**
-     * Реконструкција на прстенот со нови јазли.
-     * Ги брише сите постоечки виртуелни јазли и ги додава новите.
-     */
+    // kompletna rekonstrukcija na prstenot so nov set od jazli
     public synchronized void rebuild(Collection<T> newNodes) {
         ring.clear();
-        newNodes.forEach(this::add);
-        System.out.println("Hash Ring rebuilt. New node count: " + newNodes.size());
+        if (newNodes != null) {
+            newNodes.forEach(this::add);
+        }
+        System.out.println("[HashRing] Rebuilt. New node count: " +
+                (newNodes != null ? newNodes.size() : 0));
     }
 
-    public void add(T node) {
+    // dodava node vo ringot so numberOfReplicas virtualni pozicii
+    public synchronized void add(T node) {
         for (int i = 0; i < numberOfReplicas; i++) {
-            long hash = hash(node.toString() + i);
+            long hash = hash(node.toString() + "#" + i);
             ring.put(hash, node);
         }
     }
 
-    public void remove(T node) {
+    // gi brise site virtualni pozicii sto pripagaat na daden node
+    public synchronized void remove(T node) {
         for (int i = 0; i < numberOfReplicas; i++) {
-            long hash = hash(node.toString() + i);
+            long hash = hash(node.toString() + "#" + i);
             ring.remove(hash);
         }
     }
 
-    public T getNode(Object key) {
-        if (ring.isEmpty()) {
+    // za daden key go vrakja node-ot sto e sledna pozicija na prstenot
+    public synchronized T getNode(Object key) {
+        if (ring.isEmpty() || key == null) {
             return null;
         }
 
         long hash = hash(key.toString());
-
+        // del od mapata so klucevi >= hash na keyot
         SortedMap<Long, T> tailMap = ring.tailMap(hash);
 
-        long nodeHash;
-        if (tailMap.isEmpty()) {
-            nodeHash = ring.firstKey();
-        } else {
-            nodeHash = tailMap.firstKey();
-        }
-
+        // ako nema pobar velik hash, odi na prviot element (wrap okolu ringot)
+        long nodeHash = tailMap.isEmpty() ? ring.firstKey() : tailMap.firstKey();
         return ring.get(nodeHash);
     }
 
+    // md5 baziran hash sto vrakja nenegativen long za pozicija na prstenot
     private long hash(String key) {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
             byte[] bytes = md.digest(key.getBytes());
-            // Користиме само првите 4 бајти за долг (long) хаш
-            return ((long) (bytes[3] & 0xFF) << 24) |
-                    ((long) (bytes[2] & 0xFF) << 16) |
-                    ((long) (bytes[1] & 0xFF) << 8) |
-                    (bytes[0] & 0xFF);
+
+            long value = ((long) (bytes[3] & 0xFF) << 24)
+                    | ((long) (bytes[2] & 0xFF) << 16)
+                    | ((long) (bytes[1] & 0xFF) << 8)
+                    | (bytes[0] & 0xFF);
+
+            // maskiranje za da dobieme samo nenegativna 32-bitna vrednost
+            return value & 0xffffffffL;
+
         } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("MD5 Hash не е достапен", e);
+            throw new RuntimeException("MD5 hash algorithm not available", e);
         }
     }
 }
