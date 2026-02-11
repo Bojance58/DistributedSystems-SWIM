@@ -34,6 +34,7 @@ async function refreshStatus() {
             div.appendChild(badge);
             container.appendChild(div);
         });
+
     } catch (e) {
         console.error('Error loading status', e);
     }
@@ -41,20 +42,49 @@ async function refreshStatus() {
 
 async function refreshKeys() {
     const container = document.getElementById('keys');
-    container.innerHTML = '';
 
-    for (const key of SAMPLE_KEYS) {
-        try {
-            const response = await fetch(`${FIND_URL}/${encodeURIComponent(key)}`);
-            const text = await response.text();
+    try {
+        const results = await Promise.allSettled(
+            SAMPLE_KEYS.map(async (key) => {
+                const response = await fetch(`${FIND_URL}/${encodeURIComponent(key)}`);
+                const text = await response.text();
+
+                return {
+                    key,
+                    ok: response.ok,
+                    text,
+                    status: response.status
+                };
+            })
+        );
+
+        // renderiranje bez "polovicni" sostojbi
+        container.innerHTML = '';
+
+        results.forEach((r, i) => {
+            const key = SAMPLE_KEYS[i];
 
             const line = document.createElement('div');
             line.className = 'key-line';
-            line.textContent = text;
+
+            if (r.status === 'fulfilled') {
+
+                if (r.value.ok) {
+                    line.textContent = r.value.text;
+                } else {
+                    line.textContent = `Key '${key}' -> ERROR ${r.value.status}`;
+                }
+
+            } else {
+                line.textContent = `Key '${key}' -> FAILED`;
+                console.error('Key fetch failed:', key, r.reason);
+            }
+
             container.appendChild(line);
-        } catch (e) {
-            console.error('Error loading key assignment for', key, e);
-        }
+        });
+
+    } catch (e) {
+        console.error('Error loading keys', e);
     }
 }
 
@@ -63,20 +93,22 @@ async function rebalanceRing() {
         const response = await fetch(REBALANCE_URL);
         const text = await response.text();
         alert(text);
+
         await refreshStatus();
         await refreshKeys();
+
     } catch (e) {
         console.error('Error rebalancing hash ring', e);
     }
 }
 
-// auto-refresh status + keys na sekoe 3 sekundi
-setInterval(() => {
-    refreshStatus();
-    refreshKeys();
-}, 3000);
+async function refreshLoop() {
+    await refreshStatus();
+    await refreshKeys();
+}
 
-window.onload = () => {
-    refreshStatus();
-    refreshKeys();
-};
+// auto refresh na 3 sekundi
+setInterval(refreshLoop, 3000);
+
+// initial load
+window.onload = refreshLoop;
