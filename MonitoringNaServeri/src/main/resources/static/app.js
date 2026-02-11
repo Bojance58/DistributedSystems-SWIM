@@ -3,7 +3,7 @@ const FIND_URL = '/cluster/find';
 const REBALANCE_URL = '/cluster/rebalance';
 
 // primer keys za pokazuvanje na hash ring
-const SAMPLE_KEYS = ['cpu:8001', 'cpu:8002', 'request:12345', 'request:67890'];
+const SAMPLE_KEYS = ['cpu:8000', 'cpu:8001', 'cpu:8002', 'cpu:8003'];
 
 function statusClass(state) {
     if (state === 'ALIVE') return 'alive';
@@ -63,14 +63,19 @@ async function rebalanceRing() {
         const response = await fetch(REBALANCE_URL);
         const text = await response.text();
         alert(text);
+        await refreshStatus();
         await refreshKeys();
     } catch (e) {
         console.error('Error rebalancing hash ring', e);
     }
 }
 
-// auto-refreshing na sekoi 5sec
-setInterval(refreshStatus, 5000);
+// auto-refresh status + keys na sekoe 3 sekundi
+setInterval(() => {
+    refreshStatus();
+    refreshKeys();
+}, 3000);
+
 window.onload = () => {
     refreshStatus();
     refreshKeys();
