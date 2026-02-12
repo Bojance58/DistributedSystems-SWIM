@@ -33,10 +33,10 @@ public class NodeRunner {
         System.out.println("Seed nodes: " + seedNodes);
         System.out.println("-----------------------------------------------------");
         System.out.println("Commands:");
-        System.out.println("  status      - прикажи ја membership листата");
-        System.out.println("  ring        - ребилдај hash ring (само ALIVE nodes)");
-        System.out.println("  keys        - прикажи кој node е одговорен за неколку пример клучеви");
-        System.out.println("  exit        - гаси го node-от");
+        System.out.println("  status      - prikazi membership list");
+        System.out.println("  ring        - rebildaj hash ring");
+        System.out.println("  keys        - prikazi koj node e odgovoren za nekolku primer klucevi");
+        System.out.println("  exit        - gasi go node-оt");
         System.out.println("-----------------------------------------------------");
 
         Scanner scanner = new Scanner(System.in);
@@ -86,7 +86,7 @@ public class NodeRunner {
 
     // pokazuva koj node e odgovoren za nekolku primer klucevi preku Hash Ring
     private static void printKeyAssignments(GossipManager manager) {
-        String[] sampleKeys = {"cpu:nodeA", "cpu:nodeB", "memory:job1", "request:12345", "request:67890"};
+        String[] sampleKeys = {"cpu:8000", "cpu:8001", "cpu:8082", "cpu:8003"};
 
         System.out.println("Key assignments (via Consistent Hash Ring):");
         for (String key : sampleKeys) {
